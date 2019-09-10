@@ -110,14 +110,16 @@ class SharedMemoryObject():
          listener will monitor.
       '''
       item = None
-      while True: #infinite loop
+      while True: #infinite loop (not ideal, deamons don't always exit properly)
          try:
             name, item = connection.recv()#unpack
-            cls.Lock.acquire()#get lock
-            cls.DataDict[name] = item#change DataDict
-            cls.Lock.release()#relese lock
-         except BrokenPipeError:
+         except EOFError:#if the other end of the pipe closes 
+            #(a little hacky, but it avoids having to explicitly end the connection)
             return(None) #exits the thread
+            
+         cls.Lock.acquire()#get lock
+         cls.DataDict[name] = item#change DataDict
+         cls.Lock.release()#relese lock
 
 def SharedMemoryProcess(*args, **kwargs):
    '''Starts a subprocess and opens a pipe to it. The child's pipe is atuomatically passed in as the keyword
